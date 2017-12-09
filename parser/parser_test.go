@@ -7,6 +7,19 @@ import (
 	"github.com/ryym/monkey/lexer"
 )
 
+func checkParserErrors(t *testing.T, p *Parser) {
+	errs := p.Errors()
+	if len(errs) == 0 {
+		return
+	}
+
+	t.Errorf("parser has %d errors", len(errs))
+	for _, msg := range errs {
+		t.Errorf("parser error: %q", msg)
+	}
+	t.FailNow()
+}
+
 func TestLetStatements(t *testing.T) {
 	input := `let x=5; let y=10; let foobar=838383;`
 
@@ -16,6 +29,7 @@ func TestLetStatements(t *testing.T) {
 	if prg == nil {
 		t.Fatalf("ParseProgram() returned nil")
 	}
+	checkParserErrors(t, p)
 
 	if len(prg.Statements) != 3 {
 		t.Fatalf(
