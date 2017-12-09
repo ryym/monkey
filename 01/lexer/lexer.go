@@ -57,16 +57,16 @@ func (l *Lexer) NextToken() tk.Token {
 	switch l.ch {
 	case '=':
 		tok = newToken(tk.ASSIGN, l.ch)
-	case ';':
-		tok = newToken(tk.SEMICOLON, l.ch)
+	case '+':
+		tok = newToken(tk.PLUS, l.ch)
 	case '(':
 		tok = newToken(tk.LPAREN, l.ch)
 	case ')':
 		tok = newToken(tk.RPAREN, l.ch)
 	case ',':
 		tok = newToken(tk.COMMA, l.ch)
-	case '+':
-		tok = newToken(tk.PLUS, l.ch)
+	case ';':
+		tok = newToken(tk.SEMICOLON, l.ch)
 	case '{':
 		tok = newToken(tk.LBRACE, l.ch)
 	case '}':
