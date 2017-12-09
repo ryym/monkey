@@ -15,13 +15,17 @@ func New(input string) *Lexer {
 	return l
 }
 
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0 // EOF
+	} else {
+		return l.input[l.readPosition]
+	}
+}
+
 // To keep things simple, only support ASCIIs.
 func (l *Lexer) readChar() {
-	if l.readPosition >= len(l.input) {
-		l.ch = 0 // EOF
-	} else {
-		l.ch = l.input[l.readPosition]
-	}
+	l.ch = l.peekChar()
 	l.position = l.readPosition
 	l.readPosition += 1
 }
@@ -43,6 +47,12 @@ func (l *Lexer) readNumber() string {
 	return l.input[from:l.position]
 }
 
+func (l *Lexer) readTwoChars() string {
+	ch := l.ch
+	l.readChar()
+	return string(ch) + string(l.ch)
+}
+
 func (l *Lexer) skipWhitespace() {
 	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
 		l.readChar()
@@ -56,13 +66,25 @@ func (l *Lexer) NextToken() tk.Token {
 
 	switch l.ch {
 	case '=':
-		tok = newToken(tk.ASSIGN, l.ch)
+		if l.peekChar() == '=' {
+			lit := l.readTwoChars()
+			tok.Type = tk.EQ
+			tok.Literal = lit
+		} else {
+			tok = newToken(tk.ASSIGN, l.ch)
+		}
 	case '+':
 		tok = newToken(tk.PLUS, l.ch)
 	case '-':
 		tok = newToken(tk.MINUS, l.ch)
 	case '!':
-		tok = newToken(tk.BANG, l.ch)
+		if l.peekChar() == '=' {
+			lit := l.readTwoChars()
+			tok.Type = tk.NOT_EQ
+			tok.Literal = lit
+		} else {
+			tok = newToken(tk.BANG, l.ch)
+		}
 	case '*':
 		tok = newToken(tk.ASTERISK, l.ch)
 	case '/':
