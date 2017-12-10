@@ -8,11 +8,17 @@ import (
 	tk "github.com/ryym/monkey/token"
 )
 
+type prefixParseFn func() ast.Expression
+type infixParseFn func(ast.Expression) ast.Expression
+
 type Parser struct {
 	l         *lx.Lexer
 	curToken  tk.Token
 	peekToken tk.Token
 	errors    []string
+
+	prefixParseFns map[tk.TokenType]prefixParseFn
+	infixParseFns  map[tk.TokenType]infixParseFn
 }
 
 func New(l *lx.Lexer) *Parser {
@@ -22,6 +28,13 @@ func New(l *lx.Lexer) *Parser {
 	p.nextToken()
 	p.nextToken()
 	return p
+}
+
+func (p *Parser) registerPrefix(tt tk.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tt] = fn
+}
+func (p *Parser) registerInfix(tt tk.TokenType, fn infixParseFn) {
+	p.infixParseFns[tt] = fn
 }
 
 func (p *Parser) Errors() []string {
