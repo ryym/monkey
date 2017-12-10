@@ -8,6 +8,17 @@ import (
 	tk "github.com/ryym/monkey/token"
 )
 
+const (
+	_ int = iota
+	LOWEST
+	EQUALS
+	LESSGREATER
+	SUM
+	PRODUCT
+	PREFIX
+	CALL
+)
+
 type prefixParseFn func() ast.Expression
 type infixParseFn func(ast.Expression) ast.Expression
 
@@ -23,6 +34,9 @@ type Parser struct {
 
 func New(l *lx.Lexer) *Parser {
 	p := &Parser{l: l}
+
+	p.prefixParseFns = make(map[tk.TokenType]prefixParseFn)
+	p.registerPrefix(tk.IDENT, p.parseIdentifier)
 
 	// Set curToken and peekToken
 	p.nextToken()
@@ -70,6 +84,13 @@ func (p *Parser) ParseProgram() *ast.Program {
 	return prg
 }
 
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{
+		Token: p.curToken,
+		Value: p.curToken.Literal,
+	}
+}
+
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
 	case tk.LET:
@@ -77,7 +98,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case tk.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -116,6 +137,25 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	}
 
 	return stmt
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.curToken}
+	stmt.Expression = p.parseExpression(LOWEST)
+
+	// In expression, semicolon is optional.
+	if p.peekTokenIs(tk.SEMICOLON) {
+		p.nextToken()
+	}
+	return stmt
+}
+
+func (p *Parser) parseExpression(_precedence int) ast.Expression {
+	prefix := p.prefixParseFns[p.curToken.Type]
+	if prefix == nil {
+		return nil
+	}
+	return prefix()
 }
 
 func (p *Parser) curTokenIs(t tk.TokenType) bool {

@@ -95,3 +95,35 @@ func TestReturnStatement(t *testing.T) {
 		}
 	}
 }
+
+func TestIdentifierExpression(t *testing.T) {
+	input := "foobar;"
+
+	p := New(lexer.New(input))
+	prg := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(prg.Statements) != 1 {
+		t.Fatalf(
+			"program has not enough statements. got=%d",
+			len(prg.Statements),
+		)
+	}
+
+	stmt, ok := prg.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf(
+			"prg.Statements[0] is not ast.Expression statement. got=%T",
+			prg.Statements[0],
+		)
+	}
+
+	ident, ok := stmt.Expression.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("expression not *ast.Identifier. got=%T", stmt.Expression)
+	}
+
+	if ident.Value != "foobar" {
+		t.Errorf("ident.Value not foobar. got=%s", ident.Value)
+	}
+}
