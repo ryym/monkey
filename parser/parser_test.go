@@ -20,6 +20,16 @@ func checkParserErrors(t *testing.T, p *Parser) {
 	t.FailNow()
 }
 
+func checkStatementLen(t *testing.T, prg *ast.Program, expectedLen int) {
+	if len(prg.Statements) != expectedLen {
+		t.Fatalf(
+			"program does not contain %d statements. got=%d",
+			expectedLen,
+			len(prg.Statements),
+		)
+	}
+}
+
 func TestLetStatements(t *testing.T) {
 	input := `let x=5; let y=10; let foobar=838383;`
 
@@ -30,13 +40,7 @@ func TestLetStatements(t *testing.T) {
 		t.Fatalf("ParseProgram() returned nil")
 	}
 	checkParserErrors(t, p)
-
-	if len(prg.Statements) != 3 {
-		t.Fatalf(
-			"Statements length is not 3. got=%d",
-			len(prg.Statements),
-		)
-	}
+	checkStatementLen(t, prg, 3)
 
 	tests := []struct {
 		wantIdent string
@@ -79,13 +83,7 @@ func TestReturnStatement(t *testing.T) {
 	p := New(lexer.New(input))
 	prg := p.ParseProgram()
 	checkParserErrors(t, p)
-
-	if len(prg.Statements) != 3 {
-		t.Fatalf(
-			"Statements length is not 3. got=%d",
-			len(prg.Statements),
-		)
-	}
+	checkStatementLen(t, prg, 3)
 
 	for _, stmt := range prg.Statements {
 		_, ok := stmt.(*ast.ReturnStatement)
@@ -102,13 +100,7 @@ func TestIdentifierExpression(t *testing.T) {
 	p := New(lexer.New(input))
 	prg := p.ParseProgram()
 	checkParserErrors(t, p)
-
-	if len(prg.Statements) != 1 {
-		t.Fatalf(
-			"program has not enough statements. got=%d",
-			len(prg.Statements),
-		)
-	}
+	checkStatementLen(t, prg, 1)
 
 	stmt, ok := prg.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
@@ -134,13 +126,7 @@ func TestIntegerExpression(t *testing.T) {
 	p := New(lexer.New(input))
 	prg := p.ParseProgram()
 	checkParserErrors(t, p)
-
-	if len(prg.Statements) != 1 {
-		t.Fatalf(
-			"program has not enough statements. got=%d",
-			len(prg.Statements),
-		)
-	}
+	checkStatementLen(t, prg, 1)
 
 	stmt, ok := prg.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
