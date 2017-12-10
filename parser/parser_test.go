@@ -72,3 +72,26 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 
 	return true
 }
+
+func TestReturnStatement(t *testing.T) {
+	input := `return 5; return 10; return 993322;`
+
+	p := New(lexer.New(input))
+	prg := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(prg.Statements) != 3 {
+		t.Fatalf(
+			"Statements length is not 3. got=%d",
+			len(prg.Statements),
+		)
+	}
+
+	for _, stmt := range prg.Statements {
+		_, ok := stmt.(*ast.ReturnStatement)
+		if !ok {
+			t.Errorf("stm not *ast.ReturnStatement, got=%T", stmt)
+			continue
+		}
+	}
+}
