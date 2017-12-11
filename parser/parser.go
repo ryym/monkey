@@ -39,6 +39,8 @@ func New(l *lx.Lexer) *Parser {
 	p.prefixParseFns = make(map[tk.TokenType]prefixParseFn)
 	p.registerPrefix(tk.IDENT, p.parseIdentifier)
 	p.registerPrefix(tk.INT, p.parseIntegerLiteral)
+	p.registerPrefix(tk.BANG, p.parsePrefixExpression)
+	p.registerPrefix(tk.MINUS, p.parsePrefixExpression)
 
 	// Set curToken and peekToken
 	p.nextToken()
@@ -105,6 +107,17 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	return lit
 }
 
+func (p *Parser) parsePrefixExpression() ast.Expression {
+	exp := &ast.PrefixExpression{
+		Token:    p.curToken,
+		Operator: p.curToken.Literal,
+	}
+
+	p.nextToken()
+	exp.Right = p.parseExpression(PREFIX)
+	return exp
+}
+
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
 	case tk.LET:
@@ -167,9 +180,15 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 func (p *Parser) parseExpression(_precedence int) ast.Expression {
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
+		p.noPrefixParseFnError(p.curToken.Type)
 		return nil
 	}
 	return prefix()
+}
+
+func (p *Parser) noPrefixParseFnError(t tk.TokenType) {
+	msg := fmt.Sprintf("no prefix parse function for %s found", t)
+	p.errors = append(p.errors, msg)
 }
 
 func (p *Parser) curTokenIs(t tk.TokenType) bool {

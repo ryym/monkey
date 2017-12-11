@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/ryym/monkey/ast"
@@ -28,6 +29,30 @@ func checkStatementLen(t *testing.T, prg *ast.Program, expectedLen int) {
 			len(prg.Statements),
 		)
 	}
+}
+
+func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
+	integ, ok := il.(*ast.IntegerLiteral)
+	if !ok {
+		t.Errorf("il not *ast.IntegerLiteral. got=%T", il)
+		return false
+	}
+
+	if integ.Value != value {
+		t.Errorf("integ.Value not %d. got=%d", value, integ.Value)
+		return false
+	}
+
+	if integ.TokenLiteral() != fmt.Sprintf("%d", value) {
+		t.Errorf(
+			"integ.TokenLiteral not %d. got=%s",
+			value,
+			integ.TokenLiteral(),
+		)
+		return false
+	}
+
+	return true
 }
 
 func TestLetStatements(t *testing.T) {
@@ -143,5 +168,41 @@ func TestIntegerExpression(t *testing.T) {
 
 	if il.Value != 5 {
 		t.Errorf("il.Value not 5. got=%s", il.Value)
+	}
+}
+
+func TestPrefixExpressions(t *testing.T) {
+	prefixTests := []struct {
+		input    string
+		operator string
+		intVal   int64
+	}{
+		{"!5;", "!", 5},
+		{"-15;", "-", 15},
+	}
+	for _, tt := range prefixTests {
+		p := New(lexer.New(tt.input))
+		prg := p.ParseProgram()
+		checkParserErrors(t, p)
+		checkStatementLen(t, prg, 1)
+
+		stmt, ok := prg.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf(
+				"prg.Statements[0] is not ast.Expression statement. got=%T",
+				prg.Statements[0],
+			)
+		}
+
+		exp, ok := stmt.Expression.(*ast.PrefixExpression)
+		if !ok {
+			t.Fatalf("stmt is not ast.PrefixExpression. got=%T", stmt.Expression)
+		}
+		if exp.Operator != tt.operator {
+			t.Fatalf("exp.Operator is not '%s'. got=%s", tt.operator, exp.Operator)
+		}
+		if !testIntegerLiteral(t, exp.Right, tt.intVal) {
+			return
+		}
 	}
 }
