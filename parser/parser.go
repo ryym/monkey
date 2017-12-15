@@ -210,6 +210,12 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	}
 	leftExp := prefix()
 
+	// `a + b`のように左辺と右辺を持つ式 (infix expressions) に関しては、
+	// parseExpression と parseInfixExpression を相互に再帰して式の
+	// 結合順位を考慮しつつ AST を組み立てていく (`1 + (2 * 3)`, not `(1 + 2) * 3`)。
+	// infix expression が続く場合、1つ前の operator (+) と次の operator (*) を比べ、
+	// 次の operator の方が結合順位 (precedence) が高い場合にはそちらの式を先に
+	// Node 化し、それを1つ前の expression の右辺とする。
 	for !p.peekTokenIs(tk.SEMICOLON) && precedence < p.peekPrecedence() {
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {
