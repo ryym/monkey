@@ -59,6 +59,28 @@ func (p *Parser) Errors() []string {
 	return p.errors
 }
 
+func (p *Parser) nextToken() {
+	p.curToken = p.peekToken
+	p.peekToken = p.l.NextToken()
+}
+
+func (p *Parser) curTokenIs(t tk.TokenType) bool {
+	return p.curToken.Type == t
+}
+
+func (p *Parser) peekTokenIs(t tk.TokenType) bool {
+	return p.peekToken.Type == t
+}
+
+func (p *Parser) expectPeek(t tk.TokenType) bool {
+	if p.peekTokenIs(t) {
+		p.nextToken()
+		return true
+	} else {
+		p.peekError(t)
+		return false
+	}
+}
 func (p *Parser) peekError(t tk.TokenType) {
 	msg := fmt.Sprintf(
 		"expected next token to be %s, got %s instead",
@@ -66,11 +88,6 @@ func (p *Parser) peekError(t tk.TokenType) {
 		p.peekToken.Type,
 	)
 	p.errors = append(p.errors, msg)
-}
-
-func (p *Parser) nextToken() {
-	p.curToken = p.peekToken
-	p.peekToken = p.l.NextToken()
 }
 
 func (p *Parser) ParseProgram() *ast.Program {
@@ -86,36 +103,6 @@ func (p *Parser) ParseProgram() *ast.Program {
 	}
 
 	return prg
-}
-
-func (p *Parser) parseIdentifier() ast.Expression {
-	return &ast.Identifier{
-		Token: p.curToken,
-		Value: p.curToken.Literal,
-	}
-}
-
-func (p *Parser) parseIntegerLiteral() ast.Expression {
-	lit := &ast.IntegerLiteral{Token: p.curToken}
-	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
-	if err != nil {
-		msg := fmt.Sprintf("could not parse %q as integer", p.curToken.Literal)
-		p.errors = append(p.errors, msg)
-		return nil
-	}
-	lit.Value = value
-	return lit
-}
-
-func (p *Parser) parsePrefixExpression() ast.Expression {
-	exp := &ast.PrefixExpression{
-		Token:    p.curToken,
-		Operator: p.curToken.Literal,
-	}
-
-	p.nextToken()
-	exp.Right = p.parseExpression(PREFIX)
-	return exp
 }
 
 func (p *Parser) parseStatement() ast.Statement {
@@ -191,20 +178,32 @@ func (p *Parser) noPrefixParseFnError(t tk.TokenType) {
 	p.errors = append(p.errors, msg)
 }
 
-func (p *Parser) curTokenIs(t tk.TokenType) bool {
-	return p.curToken.Type == t
-}
-
-func (p *Parser) peekTokenIs(t tk.TokenType) bool {
-	return p.peekToken.Type == t
-}
-
-func (p *Parser) expectPeek(t tk.TokenType) bool {
-	if p.peekTokenIs(t) {
-		p.nextToken()
-		return true
-	} else {
-		p.peekError(t)
-		return false
+func (p *Parser) parsePrefixExpression() ast.Expression {
+	exp := &ast.PrefixExpression{
+		Token:    p.curToken,
+		Operator: p.curToken.Literal,
 	}
+
+	p.nextToken()
+	exp.Right = p.parseExpression(PREFIX)
+	return exp
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{
+		Token: p.curToken,
+		Value: p.curToken.Literal,
+	}
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	lit := &ast.IntegerLiteral{Token: p.curToken}
+	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as integer", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+	lit.Value = value
+	return lit
 }
