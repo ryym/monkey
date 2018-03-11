@@ -167,7 +167,7 @@ func TestIntegerExpression(t *testing.T) {
 	}
 
 	if il.Value != 5 {
-		t.Errorf("il.Value not 5. got=%s", il.Value)
+		t.Errorf("il.Value not 5. got=%d", il.Value)
 	}
 }
 
