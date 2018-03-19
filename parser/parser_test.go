@@ -171,6 +171,40 @@ func TestIntegerExpression(t *testing.T) {
 	}
 }
 
+func TestBooleanExpression(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"true", true},
+		{"false", false},
+	}
+
+	for _, tt := range tests {
+		p := New(lexer.New(tt.input))
+		prg := p.ParseProgram()
+		checkParserErrors(t, p)
+		checkStatementLen(t, prg, 1)
+
+		stmt, ok := prg.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf(
+				"prg.Statements[0] is not ast.Expression statement. got=%T",
+				prg.Statements[0],
+			)
+		}
+
+		bo, ok := stmt.Expression.(*ast.Boolean)
+		if !ok {
+			t.Fatalf("expression not *ast.Boolean. got=%T", stmt.Expression)
+		}
+
+		if bo.Value != tt.expected {
+			t.Errorf("bo.Value not %v. got=%v", tt.expected, bo.Value)
+		}
+	}
+}
+
 func TestPrefixExpressions(t *testing.T) {
 	infixTests := []struct {
 		input    string
