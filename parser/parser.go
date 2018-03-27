@@ -54,6 +54,7 @@ func New(l *lx.Lexer) *Parser {
 	p.registerPrefix(tk.MINUS, p.parsePrefixExpression)
 	p.registerPrefix(tk.TRUE, p.parseBoolean)
 	p.registerPrefix(tk.FALSE, p.parseBoolean)
+	p.registerPrefix(tk.LPAREN, p.parseGroupedExpression)
 
 	p.infixParseFns = make(map[tk.TokenType]infixParseFn)
 	for _, token := range []tk.TokenType{
@@ -270,6 +271,15 @@ func (p *Parser) parseBoolean() ast.Expression {
 		Token: p.curToken,
 		Value: p.curTokenIs(tk.TRUE),
 	}
+}
+
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	p.nextToken()
+	exp := p.parseExpression(LOWEST) // 括弧内の式をごっそりパースする。
+	if !p.expectPeek(tk.RPAREN) {
+		return nil
+	}
+	return exp
 }
 
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
