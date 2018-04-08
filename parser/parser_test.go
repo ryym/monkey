@@ -110,6 +110,27 @@ func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{
 	return false
 }
 
+func testInfixExpression(t *testing.T, exp ast.Expression, left interface{}, operator string, right interface{}) bool {
+	opExp, ok := exp.(*ast.InfixExpression)
+	if !ok {
+		t.Errorf("exp is not ast.OperatorExpression. got=%T(%s)", exp, exp)
+		return false
+	}
+
+	if !testLiteralExpression(t, opExp.Left, left) {
+		return false
+	}
+	if opExp.Operator != operator {
+		t.Errorf("exp.Operator is not '%s'. got=%q", operator, opExp.Operator)
+		return false
+	}
+	if !testLiteralExpression(t, opExp.Right, right) {
+		return false
+	}
+
+	return true
+}
+
 func TestLetStatements(t *testing.T) {
 	input := `let x=5; let y=10; let foobar=838383;`
 
@@ -324,20 +345,7 @@ func TestInfixExpressions(t *testing.T) {
 			)
 		}
 
-		exp, ok := stmt.Expression.(*ast.InfixExpression)
-		if !ok {
-			t.Fatalf("stmt is not ast.PrefixExpression. got=%T", stmt.Expression)
-		}
-
-		if !testLiteralExpression(t, exp.Left, tt.leftVal) {
-			return
-		}
-		if exp.Operator != tt.operator {
-			t.Fatalf("exp.Operator is not '%s'. got=%s", tt.operator, exp.Operator)
-		}
-		if !testLiteralExpression(t, exp.Right, tt.rightVal) {
-			return
-		}
+		testInfixExpression(t, stmt.Expression, tt.leftVal, tt.operator, tt.rightVal)
 	}
 }
 
