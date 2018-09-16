@@ -62,8 +62,8 @@ func testIdentifier(t *testing.T, exp ast.Expression, value string) bool {
 		return false
 	}
 
-	if ident.Value != "foobar" {
-		t.Errorf("ident.Value not foobar. got=%s", ident.Value)
+	if ident.Value != value {
+		t.Errorf("ident.Value not %s. got=%s", value, ident.Value)
 		return false
 	}
 
