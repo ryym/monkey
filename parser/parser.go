@@ -55,6 +55,7 @@ func New(l *lx.Lexer) *Parser {
 	p.registerPrefix(tk.TRUE, p.parseBoolean)
 	p.registerPrefix(tk.FALSE, p.parseBoolean)
 	p.registerPrefix(tk.LPAREN, p.parseGroupedExpression)
+	p.registerPrefix(tk.IF, p.parseIfExpression)
 
 	p.infixParseFns = make(map[tk.TokenType]infixParseFn)
 	for _, token := range []tk.TokenType{
@@ -292,4 +293,53 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	p.nextToken()
 	exp.Right = p.parseExpression(precedence)
 	return exp
+}
+
+func (p *Parser) parseIfExpression() ast.Expression {
+	expression := &ast.IfExpression{Token: p.curToken}
+
+	if !p.expectPeek(tk.LPAREN) {
+		return nil
+	}
+
+	p.nextToken()
+	expression.Condition = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(tk.RPAREN) {
+		return nil
+	}
+
+	if !p.expectPeek(tk.LBRACE) {
+		return nil
+	}
+
+	expression.Consequence = p.parseBlockStatement()
+
+	if p.peekTokenIs(tk.ELSE) {
+		p.nextToken()
+
+		if !p.expectPeek(tk.LBRACE) {
+			return nil
+		}
+
+		expression.Alternative = p.parseBlockStatement()
+	}
+
+	return expression
+}
+
+func (p *Parser) parseBlockStatement() *ast.BlockStatement {
+	block := &ast.BlockStatement{Token: p.curToken}
+	block.Statements = []ast.Statement{}
+
+	p.nextToken()
+	for !p.curTokenIs(tk.RBRACE) && !p.curTokenIs(tk.EOF) {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			block.Statements = append(block.Statements, stmt)
+		}
+		p.nextToken()
+	}
+
+	return block
 }
