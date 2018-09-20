@@ -29,6 +29,7 @@ var precedences = map[tk.TokenType]int{
 	tk.MINUS:    SUM,
 	tk.SLASH:    PRODUCT,
 	tk.ASTERISK: PRODUCT,
+	tk.LPAREN:   CALL,
 }
 
 type prefixParseFn func() ast.Expression
@@ -71,6 +72,7 @@ func New(l *lx.Lexer) *Parser {
 	} {
 		p.registerInfix(token, p.parseInfixExpression)
 	}
+	p.registerInfix(tk.LPAREN, p.parseCallExpression)
 
 	// Set curToken and peekToken
 	p.nextToken()
@@ -387,4 +389,34 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 	}
 
 	return identifiers
+}
+
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	call := &ast.CallExpression{Token: p.curToken, Function: function}
+	call.Arguments = p.parseCallArguments()
+	return call
+}
+
+func (p *Parser) parseCallArguments() []ast.Expression {
+	args := []ast.Expression{}
+
+	if p.peekTokenIs(tk.RPAREN) {
+		p.nextToken()
+		return args
+	}
+
+	p.nextToken()
+	args = append(args, p.parseExpression(LOWEST))
+
+	for p.peekTokenIs(tk.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		args = append(args, p.parseExpression(LOWEST))
+	}
+
+	if !p.expectPeek(tk.RPAREN) {
+		return nil
+	}
+
+	return args
 }
