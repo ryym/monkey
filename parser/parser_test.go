@@ -132,27 +132,30 @@ func testInfixExpression(t *testing.T, exp ast.Expression, left interface{}, ope
 }
 
 func TestLetStatements(t *testing.T) {
-	input := `let x=5; let y=10; let foobar=838383;`
-
-	p := New(lexer.New(input))
-
-	prg := p.ParseProgram()
-	if prg == nil {
-		t.Fatalf("ParseProgram() returned nil")
-	}
-	checkParserErrors(t, p)
-	checkStatementLen(t, prg, 3)
-
 	tests := []struct {
-		wantIdent string
+		input              string
+		expectedIdentifier string
+		expectedValue      interface{}
 	}{
-		{"x"},
-		{"y"},
-		{"foobar"},
+		{"let x = 5;", "x", 5},
+		{"let y = true;", "y", true},
+		{"let foobar = y;", "foobar", "y"},
 	}
-	for i, tt := range tests {
-		stmt := prg.Statements[i]
-		if !testLetStatement(t, stmt, tt.wantIdent) {
+
+	for _, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+		checkStatementLen(t, program, 1)
+
+		stmt := program.Statements[0]
+		if !testLetStatement(t, stmt, tt.expectedIdentifier) {
+			return
+		}
+
+		val := stmt.(*ast.LetStatement).Value
+		if !testLiteralExpression(t, val, tt.expectedValue) {
 			return
 		}
 	}
@@ -178,19 +181,49 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 	return true
 }
 
-func TestReturnStatement(t *testing.T) {
-	input := `return 5; return 10; return 993322;`
+// func TestReturnStatement(t *testing.T) {
+// 	input := `return 5; return 10; return 993322;`
 
-	p := New(lexer.New(input))
-	prg := p.ParseProgram()
-	checkParserErrors(t, p)
-	checkStatementLen(t, prg, 3)
+// 	p := New(lexer.New(input))
+// 	prg := p.ParseProgram()
+// 	checkParserErrors(t, p)
+// 	checkStatementLen(t, prg, 3)
 
-	for _, stmt := range prg.Statements {
-		_, ok := stmt.(*ast.ReturnStatement)
+// 	for _, stmt := range prg.Statements {
+// 		_, ok := stmt.(*ast.ReturnStatement)
+// 		if !ok {
+// 			t.Errorf("stm not *ast.ReturnStatement, got=%T", stmt)
+// 			continue
+// 		}
+// 	}
+// }
+
+func TestReturnStatements(t *testing.T) {
+	tests := []struct {
+		input         string
+		expectedValue interface{}
+	}{
+		{"return 5;", 5},
+		{"return true;", true},
+		{"return y;", "y"},
+	}
+
+	for _, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.ParseProgram()
+		checkParserErrors(t, p)
+		checkStatementLen(t, program, 1)
+
+		stmt := program.Statements[0]
+		returnStmt, ok := stmt.(*ast.ReturnStatement)
 		if !ok {
 			t.Errorf("stm not *ast.ReturnStatement, got=%T", stmt)
-			continue
+			return
+		}
+
+		if !testLiteralExpression(t, returnStmt.ReturnValue, tt.expectedValue) {
+			return
 		}
 	}
 }
