@@ -1,3 +1,3 @@
 module github.com/ryym/monkey
 
-go 1.13
+go 1.15
