@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/ryym/monkey/evaluator"
 	"github.com/ryym/monkey/lexer"
 	"github.com/ryym/monkey/parser"
 )
@@ -24,14 +25,16 @@ func Start(in io.Reader, out io.Writer) {
 		l := lexer.New(line)
 		p := parser.New(l)
 		program := p.ParseProgram()
-
 		if len(p.Errors()) > 0 {
 			printParseErrors(out, p.Errors())
 			continue
 		}
 
-		io.WriteString(out, program.String())
-		io.WriteString(out, "\n")
+		evaluated := evaluator.Eval(program)
+		if evaluated != nil {
+			io.WriteString(out, evaluated.Inspect())
+			io.WriteString(out, "\n")
+		}
 	}
 
 }
