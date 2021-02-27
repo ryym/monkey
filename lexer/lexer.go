@@ -127,7 +127,7 @@ func (l *Lexer) NextToken() tk.Token {
 }
 
 func newToken(tp tk.TokenType, ch byte) tk.Token {
-	return tk.Token{tp, string(ch)}
+	return tk.Token{Type: tp, Literal: string(ch)}
 }
 
 func isLetter(c byte) bool {
